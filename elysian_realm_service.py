@@ -18,15 +18,18 @@ INDEX_FILE_NAME = "elysian-realm-index.json"
 
 
 class GitCommandError(RuntimeError):
+    # 表示 git 相关操作失败的业务异常。
     pass
 
 
 @dataclass(slots=True)
 class StrategyEntry:
+    # 保存单张攻略图的关键词和最后更新时间。
     keywords: list[str]
     last_updated: str | None = None
 
     def to_dict(self) -> dict[str, object]:
+        # 将数据条目转换为可序列化字典。
         return {
             "keywords": self.keywords,
             "last_updated": self.last_updated,
@@ -35,6 +38,7 @@ class StrategyEntry:
 
 @dataclass(slots=True)
 class MatchResult:
+    # 描述一次关键词命中的图片结果。
     image_name: str
     image_path: Path
     matched_keyword: str
@@ -43,6 +47,7 @@ class MatchResult:
 
 
 def parse_timestamp(value: str | None) -> datetime | None:
+    # 将时间字符串解析为 UTC 时区的 datetime 对象。
     if not value or not isinstance(value, str):
         return None
     try:
@@ -55,6 +60,7 @@ def parse_timestamp(value: str | None) -> datetime | None:
 
 
 def normalize_timestamp(value: str | None) -> str | None:
+    # 将时间值标准化为 ISO 格式字符串。
     parsed = parse_timestamp(value)
     if parsed is None:
         return None
@@ -62,6 +68,7 @@ def normalize_timestamp(value: str | None) -> str | None:
 
 
 def display_timestamp(value: str | None) -> str:
+    # 将时间值格式化为面向展示的日期文本。
     parsed = parse_timestamp(value)
     if parsed is None:
         return "未记录"
@@ -69,6 +76,7 @@ def display_timestamp(value: str | None) -> str:
 
 
 def normalize_keywords(keywords: Iterable[str]) -> list[str]:
+    # 清洗关键词列表并去重，保留原始顺序。
     unique_keywords: list[str] = []
     seen: set[str] = set()
     for keyword in keywords:
@@ -83,11 +91,13 @@ def normalize_keywords(keywords: Iterable[str]) -> list[str]:
 
 
 def split_keywords(raw_keywords: str) -> list[str]:
+    # 按中英文逗号切分关键词字符串。
     segments = re.split(r"[,，]", raw_keywords)
     return normalize_keywords(segments)
 
 
 def _image_priority(path: Path) -> tuple[int, str]:
+    # 为不同扩展名的图片建立稳定排序优先级。
     suffix_order = {
         ".png": 0,
         ".jpg": 1,
@@ -99,12 +109,15 @@ def _image_priority(path: Path) -> tuple[int, str]:
 
 
 class StrategyStore:
+    # 负责索引文件的加载、规范化和持久化。
     def __init__(self, storage_path: Path, template_path: Path):
+        # 初始化运行时索引路径与模板索引路径。
         self.storage_path = storage_path
         self.template_path = template_path
         self.entries: dict[str, StrategyEntry] = {}
 
     def load(self) -> None:
+        # 合并模板索引与运行时索引，并在必要时回写规范化结果。
         template_store = self._load_raw_store(self.template_path)
         runtime_store = self._load_raw_store(self.storage_path, rename_broken=True)
 
@@ -120,7 +133,9 @@ class StrategyStore:
             if name in runtime_store:
                 entry, entry_changed = self._normalize_entry(runtime_store[name])
             else:
-                entry, entry_changed = self._normalize_entry(template_store.get(name, {}))
+                entry, entry_changed = self._normalize_entry(
+                    template_store.get(name, {})
+                )
                 changed = True
             normalized_entries[name] = entry
             changed = changed or entry_changed
@@ -135,6 +150,7 @@ class StrategyStore:
         *,
         rename_broken: bool = False,
     ) -> dict[str, object]:
+        # 读取原始索引文件，必要时重命名损坏文件。
         if not source_path.exists():
             return {}
 
@@ -153,13 +169,18 @@ class StrategyStore:
         return raw
 
     def _normalize_entry(self, raw_entry: object) -> tuple[StrategyEntry, bool]:
+        # 将原始索引项规范化为 StrategyEntry，并返回是否发生变化。
         if not isinstance(raw_entry, dict):
             return StrategyEntry([], None), True
 
         raw_keywords = raw_entry.get("keywords", [])
-        keywords = normalize_keywords(raw_keywords if isinstance(raw_keywords, list) else [])
+        keywords = normalize_keywords(
+            raw_keywords if isinstance(raw_keywords, list) else []
+        )
         raw_timestamp = raw_entry.get("last_updated")
-        last_updated = normalize_timestamp(raw_timestamp if isinstance(raw_timestamp, str) else None)
+        last_updated = normalize_timestamp(
+            raw_timestamp if isinstance(raw_timestamp, str) else None
+        )
 
         normalized = StrategyEntry(keywords, last_updated)
         changed = normalized.to_dict() != {
@@ -169,22 +190,22 @@ class StrategyStore:
         return normalized, changed
 
     def save(self) -> None:
+        # 将当前索引内容持久化到运行时索引文件。
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            name: entry.to_dict()
-            for name, entry in self.entries.items()
-        }
+        payload = {name: entry.to_dict() for name, entry in self.entries.items()}
         self.storage_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
     def ensure_entry(self, image_name: str) -> StrategyEntry:
+        # 确保指定图片名在索引中存在条目。
         if image_name not in self.entries:
             self.entries[image_name] = StrategyEntry([], None)
         return self.entries[image_name]
 
     def add_keywords(self, image_name: str, keywords: Iterable[str]) -> StrategyEntry:
+        # 为指定图片条目合并追加关键词并保存。
         entry = self.ensure_entry(image_name)
         merged = normalize_keywords([*entry.keywords, *keywords])
         entry.keywords = merged
@@ -192,12 +213,14 @@ class StrategyStore:
         return entry
 
     def remove_entry(self, image_name: str) -> bool:
+        # 删除指定图片条目，并在删除成功时保存索引。
         removed = self.entries.pop(image_name, None) is not None
         if removed:
             self.save()
         return removed
 
     def update_timestamp(self, image_name: str, timestamp: str | None) -> bool:
+        # 更新指定图片的最后更新时间，返回是否有变更。
         normalized = normalize_timestamp(timestamp)
         entry = self.ensure_entry(image_name)
         if entry.last_updated == normalized:
@@ -206,12 +229,14 @@ class StrategyStore:
         return True
 
     def has_keyword(self, keyword: str) -> bool:
+        # 判断当前索引中是否包含指定关键词。
         for entry in self.entries.values():
             if keyword in entry.keywords:
                 return True
         return False
 
     def find_keyword_matches(self, keyword: str) -> list[str]:
+        # 返回所有命中指定关键词的图片名。
         return [
             image_name
             for image_name, entry in self.entries.items()
@@ -219,6 +244,7 @@ class StrategyStore:
         ]
 
     def display_keyword(self, image_name: str) -> str:
+        # 返回图片条目用于展示的首选关键词。
         entry = self.entries.get(image_name)
         if entry and entry.keywords:
             return entry.keywords[0]
@@ -230,13 +256,16 @@ class StrategyStore:
         *,
         require_timestamp: bool = False,
     ) -> str | None:
+        # 在多个候选图片中挑选最近更新的一张。
         candidates = list(image_names)
         if not candidates:
             return None
 
         ranked_candidates: list[tuple[datetime, int, str]] = []
         for index, image_name in enumerate(candidates):
-            parsed = parse_timestamp(self.entries.get(image_name, StrategyEntry([], None)).last_updated)
+            parsed = parse_timestamp(
+                self.entries.get(image_name, StrategyEntry([], None)).last_updated
+            )
             if require_timestamp and parsed is None:
                 continue
             ranked_candidates.append((parsed or _EMPTY_UTC, -index, image_name))
@@ -247,6 +276,7 @@ class StrategyStore:
         return max(ranked_candidates)[2]
 
     def format_entries(self) -> str:
+        # 将索引格式化为单个文本列表。
         lines: list[str] = []
         for image_name, entry in self.entries.items():
             keywords = "、".join(entry.keywords) if entry.keywords else "(无关键词)"
@@ -256,6 +286,7 @@ class StrategyStore:
         return "\n".join(lines) if lines else "当前没有任何乐土攻略配置。"
 
     def format_entry_blocks(self) -> list[str]:
+        # 将索引格式化为分块文本，便于转发或导出。
         blocks: list[str] = []
         for image_name, entry in self.entries.items():
             block_lines = [f"{image_name}: "]
@@ -268,6 +299,7 @@ class StrategyStore:
 
 
 class ElysianRealmService:
+    # 封装攻略仓库同步、索引维护和关键词解析逻辑。
     def __init__(
         self,
         *,
@@ -276,24 +308,31 @@ class ElysianRealmService:
         repository_url: str,
         template_strategies_path: Path,
     ):
+        # 初始化仓库路径、索引存储和图片缓存。
         self.storage_dir = storage_dir
         self.repo_path = storage_dir / repo_directory_name
         self.repository_url = repository_url
-        self.store = StrategyStore(storage_dir / INDEX_FILE_NAME, template_strategies_path)
+        self.store = StrategyStore(
+            storage_dir / INDEX_FILE_NAME, template_strategies_path
+        )
         self._image_index: dict[str, Path] = {}
 
     def load(self) -> None:
+        # 加载索引并同步当前仓库中的图片文件。
         self.store.load()
         self.scan_images()
         self.sync_discovered_images()
 
     def is_git_repository(self) -> bool:
+        # 判断当前仓库目录是否已初始化为 git 仓库。
         return (self.repo_path / ".git").exists()
 
     def has_keyword(self, keyword: str) -> bool:
+        # 判断索引中是否存在指定关键词。
         return self.store.has_keyword(keyword)
 
     def scan_images(self) -> dict[str, Path]:
+        # 扫描仓库中的图片文件并建立图片名到路径的索引。
         image_index: dict[str, Path] = {}
         if not self.repo_path.exists():
             self._image_index = {}
@@ -310,6 +349,7 @@ class ElysianRealmService:
         return self._image_index
 
     def sync_discovered_images(self) -> bool:
+        # 将仓库中新发现的图片同步进索引文件。
         image_index = self.scan_images()
         changed = False
         for image_name in image_index:
@@ -321,6 +361,7 @@ class ElysianRealmService:
         return changed
 
     async def clone_repository(self) -> dict[str, object]:
+        # 首次克隆攻略仓库并初始化本地索引与时间戳。
         if self.is_git_repository():
             self.scan_images()
             self.sync_discovered_images()
@@ -357,8 +398,9 @@ class ElysianRealmService:
         }
 
     async def update_repository(self) -> dict[str, object]:
+        # 更新本地攻略仓库并返回本次变更摘要。
         if not self.is_git_repository():
-             raise GitCommandError("未找到本地攻略仓库，请先执行:\n/获取乐土攻略")
+            raise GitCommandError("未找到本地攻略仓库，请先执行:\n/获取乐土攻略")
 
         old_commit = await self.get_head_commit()
         await self.validate_commit_hash(old_commit)
@@ -400,6 +442,7 @@ class ElysianRealmService:
         }
 
     async def resolve_keyword(self, keyword: str) -> MatchResult | None:
+        # 根据关键词解析出最合适的攻略图片结果。
         matched_names = self.store.find_keyword_matches(keyword)
         if not matched_names:
             return None
@@ -431,6 +474,7 @@ class ElysianRealmService:
         *,
         overwrite: bool,
     ) -> bool:
+        # 刷新指定图片条目的最后提交时间。
         if not self.is_git_repository():
             return False
 
@@ -454,12 +498,16 @@ class ElysianRealmService:
         return changed
 
     async def get_head_commit(self) -> str:
-        returncode, stdout, stderr = await self.run_git("rev-parse", "HEAD", cwd=self.repo_path)
+        # 获取当前仓库 HEAD 指向的 commit 哈希。
+        returncode, stdout, stderr = await self.run_git(
+            "rev-parse", "HEAD", cwd=self.repo_path
+        )
         if returncode != 0:
             raise GitCommandError(stderr or stdout or "无法读取当前仓库 HEAD。")
         return stdout.splitlines()[-1].strip()
 
     async def validate_commit_hash(self, commit_hash: str) -> None:
+        # 校验 commit 哈希格式与对象是否真实存在。
         if not _COMMIT_HASH_RE.fullmatch(commit_hash):
             raise GitCommandError(f"检测到非法 commit 哈希: {commit_hash}")
 
@@ -472,7 +520,10 @@ class ElysianRealmService:
         if returncode != 0:
             raise GitCommandError(stderr or f"commit 不存在: {commit_hash}")
 
-    async def get_changed_image_names(self, old_commit: str, new_commit: str) -> list[str]:
+    async def get_changed_image_names(
+        self, old_commit: str, new_commit: str
+    ) -> list[str]:
+        # 获取两个 commit 之间发生变化的攻略图片名列表。
         await self.validate_commit_hash(old_commit)
         await self.validate_commit_hash(new_commit)
 
@@ -503,6 +554,7 @@ class ElysianRealmService:
         return changed_names
 
     async def get_last_commit_timestamp(self, relative_path: str) -> str | None:
+        # 获取指定文件最近一次提交的时间戳。
         returncode, stdout, stderr = await self.run_git(
             "log",
             "-1",
@@ -513,12 +565,15 @@ class ElysianRealmService:
             cwd=self.repo_path,
         )
         if returncode != 0:
-            raise GitCommandError(stderr or stdout or f"无法读取文件的提交时间: {relative_path}")
+            raise GitCommandError(
+                stderr or stdout or f"无法读取文件的提交时间: {relative_path}"
+            )
         if not stdout.strip():
             return None
         return normalize_timestamp(stdout.splitlines()[-1].strip())
 
     async def run_git(self, *args: str, cwd: Path) -> tuple[int, str, str]:
+        # 异步执行 git 命令并返回退出码、标准输出和标准错误。
         try:
             process = await asyncio.create_subprocess_exec(
                 "git",

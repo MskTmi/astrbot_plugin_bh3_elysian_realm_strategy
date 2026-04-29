@@ -137,6 +137,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         if service_unavailable is not None:
             yield service_unavailable
             return
+        yield event.plain_result("正在获取乐土攻略并建立索引，请稍候...")
         try:
             result = await self.service.clone_repository()  # type: ignore[union-attr]
         except GitCommandError as exc:
@@ -174,6 +175,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         if service_unavailable is not None:
             yield service_unavailable
             return
+        yield event.plain_result("正在更新乐土攻略并刷新索引，请稍候...")
         try:
             result = await self.service.update_repository()  # type: ignore[union-attr]
         except GitCommandError as exc:

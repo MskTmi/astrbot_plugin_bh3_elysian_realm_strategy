@@ -1,121 +1,157 @@
 # 基于 AstrBot 的崩坏3 往世乐土攻略查询插件
-> 移植自 Mirai 版 [Bh3-ElysianRealm-Strategy](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)，并补齐了适配 AstrBot 的仓库同步、关键词索引和图片回复能力。
 
-## 功能
+> 可在群聊或私聊中根据关键词触发图片，快速获取往世乐土攻略
 
-- 发送角色关键词即可返回本地攻略图。
-- 支持多流派共享关键词。同一关键词命中多个变体时，自动返回最近更新的那一张图。
-- `/更新乐土攻略` 会比较更新前后的 git commit，自动识别变动图片并刷新对应角色的 UTC 更新时间。
-- 插件根目录的 `elysian-realm-index.json` 作为内置索引模板，运行时会写入 `data` 目录并持续更新。
-- 保留 AstrBot 侧的关键词管理命令，方便为新增图片补充触发词。
-- `/乐土关键词列表` 默认在群聊中使用单次合并转发发送，合并转发中的每条消息最 10 条攻略；私聊等非群聊场景回退为 txt 文件回复。
+> 移植自 Mirai 版 [Bh3-ElysianRealm-Strategy](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)，并补齐了适配 AstrBot 的仓库同步、关键词索引、权限控制和图片回复能力
 
-## 指令
+更新记录见 [CHANGELOG.md](CHANGELOG.md)
 
-- `/获取乐土攻略`
-	首次克隆攻略仓库并建立本地索引
-- `/强制获取乐土攻略`
-	删除现有攻略仓库目录并重新浅克隆远端仓库，适用于解决无法正常获取或是更新导致的奇怪问题
-- `/更新乐土攻略`
-	拉取最新提交，识别本次更新涉及的图片角色，并更新对应时间戳。
-	目前执行 `/更新乐土攻略` 后，如有新增图片或新增角色，仍需要使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 手动补充关键词。
-- `/添加乐土关键词 <图片名> <关键词1,关键词2>`
-	为某张攻略图追加关键词
-- `/删除乐土关键词 <图片名>`
-	删除某张攻略图的关键词配置
-- `/乐土关键词列表`
-	查看当前索引中的图片名和关键词
-- `/RealmCommand list`
-	兼容 Mirai 旧命令格式；输出行为与 `/乐土关键词列表` 一致
+## 食用方法
 
-## 使用示例
+1. 安装本插件
+2. 初次运行「请」发送 `/获取乐土攻略`，自动克隆攻略图片仓库并建立本地索引
+3. 获取完成后，直接发送角色名或关键词即可触发对应攻略图
+
+> `/获取乐土攻略`、`/更新乐土攻略`、`/强制获取乐土攻略` 都依赖 git  
+> 若网络较差，可在插件配置中选择预设代理，或配置自定义代理
+
+## 攻略更新
+
+### 图片更新
+
+- 使用 `/更新乐土攻略` 拉取最新版攻略仓库
+- 若本地仓库被手动修改、`.git` 目录损坏，或普通更新已经无法正常使用，可改用 `/强制获取乐土攻略` 删除本地仓库后重新浅克隆远端仓库
+
+
+### 触发词更新
+
+目前执行 `/更新乐土攻略` 后，如果新增了图片或新增了角色，仍需要使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 手动补充关键词，可以在 [这里](https://github.com/MskTmi/ElysianRealm-Data/releases) 拷贝最新的攻略的触发词
+> 也可以直接编辑索引文件 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/elysian-realm-index.json` 手动维护关键词
+
+## 效果
 
 ```text
 用户: /更新乐土攻略
+Bot: 正在更新乐土攻略并刷新索引，请稍候...
 Bot: 更新的角色: Felis_Ultimate, Human
 
 用户: 猫猫乐土
 Bot: [自动发送最近更新的那一张猫猫乐土攻略图]
 
-用户: 猫猫普攻流
-Bot: [发送 Felis_Attack 图片]
+用户: /RealmCommand add Felis 猫猫乐土,菲利丝乐土
+Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 ```
+
+## 功能
+
+- 发送角色关键词即可返回本地攻略图
+- 支持多流派共享关键词；同一关键词命中多个变体时，自动返回最近更新的那一张图
+- `/更新乐土攻略` 会比较更新前后的 git commit，自动识别变动图片并刷新对应角色的 UTC 更新时间
+- 插件根目录的 `elysian-realm-index.json` 作为内置索引模板，运行时会写入 `data` 目录并持续更新
+- 保留 AstrBot 侧的关键词管理命令，方便为新增图片补充触发词
+- `/乐土关键词列表` 默认在群聊中使用单次合并转发发送，合并转发中的每条消息最多 10 条攻略；私聊等非群聊场景回退为 txt 文件回复
+
+## 指令
+
+| 指令                                           | 描述                                       |
+| :--------------------------------------------- | :----------------------------------------- |
+| `/获取乐土攻略`                                | 首次克隆攻略仓库并建立本地索引             |
+| `/强制获取乐土攻略`                            | 删除现有攻略仓库目录并重新浅克隆远端仓库   |
+| `/更新乐土攻略`                                | 拉取最新提交并刷新本次更新涉及的图片时间戳 |
+| `/添加乐土关键词 <图片名> <关键词1,关键词2>`   | 为某张攻略图追加一个或多个关键词           |
+| `/删除乐土关键词 <图片名>`                     | 删除某张攻略图的关键词配置                 |
+| `/乐土关键词列表`                              | 查看当前索引中的图片名和关键词             |
+| `/RealmCommand list`                           | 兼容 Mirai 旧命令格式，查看攻略列表        |
+| `/RealmCommand add <图片名> <关键词1,关键词2>` | 兼容 Mirai 旧命令格式，追加关键词          |
+| `/RealmCommand del <图片名>`                   | 兼容 Mirai 旧命令格式，删除关键词配置      |
+
+## 注意
+
+1. 获取与更新攻略使用 GitHub 仓库，请确保网络可访问；若网络较差，可优先配置 Git 代理
+2. `/更新乐土攻略` 当前只会同步图片和更新时间，不会自动为新增图片补充关键词
+3. 若执行更新或获取失败，不要连续重复请求；请先检查 git、网络、代理配置或直接尝试 `/强制获取乐土攻略`
+4. 管理类指令是否允许非管理员使用，取决于“允许非管理员使用管理指令”和“允许非管理员使用的指令列表”的配置
+5. 群聊和私聊自动回复是否启用，以及白名单限制，取决于“启用私聊回复”“启用群聊回复”“私聊白名单”“群聊白名单”的配置
 
 ## 数据文件
 
 - 插件根目录的 `elysian-realm-index.json` 为随插件分发的默认索引模板
 - 本地仓库默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data`
-- 索引文件默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/elysian-realm-index.json`
+- 运行时索引文件默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/elysian-realm-index.json`
 
-新版 `elysian-realm-index.json` 结构如下：
+运行时索引结构示例：
 
 ```json
 {
-	"Felis_Attack": {
-		"keywords": ["猫猫乐土", "猫猫普攻流"],
-		"last_updated": "2024-12-25T10:00:00+00:00"
-	},
-	"Felis_Ultimate": {
-		"keywords": ["猫猫乐土", "猫猫大招流"],
-		"last_updated": "2024-12-31T10:00:00+00:00"
-	}
+  "Felis_Attack": {
+    "keywords": ["猫猫乐土", "猫猫普攻流"],
+    "last_updated": "2024-12-25T10:00:00+00:00"
+  },
+  "Felis_Ultimate": {
+    "keywords": ["猫猫乐土", "猫猫大招流"],
+    "last_updated": "2024-12-31T10:00:00+00:00"
+  }
 }
 ```
 
+## 自定义攻略
+
+### 添加本地攻略图
+
+1. 将图片放入 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data`
+2. 使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 为图片补充触发词
+3. 用户在聊天中发送对应关键词后，即可触发该图片
+
+### 自定义攻略仓库
+
+1. 准备自己的攻略仓库，目录中放置图片文件
+2. 在插件配置中的“乐土攻略仓库地址”填写新的仓库地址
+3. 如需走代理，可同步调整“Git 代理方式”或“自定义 Git 代理地址”
+4. 执行 `/强制获取乐土攻略`，重新拉取新仓库中的图片
+
 ## 插件配置
-
-插件通过 `_conf_schema.json` 暴露了以下分组配置：
-
-- `repository_settings`: 仓库同步配置
-- `reply_settings`: 自动回复配置
-- `permission_settings`: 权限控制配置
 
 主要配置项如下：
 
-- `repository_settings.repository_url`: 攻略仓库地址
-- `repository_settings.repository_proxy_method`: Git 拉取代理方式
-- `repository_settings.repository_proxy_custom_url`: 自定义 Git 代理地址
-- `reply_settings.enable_private_reply`: 私聊自动回复开关
-- `reply_settings.enable_group_reply`: 群聊自动回复开关
-- `reply_settings.private_whitelist`: 私聊白名单，按完整 UMO 限制
-- `reply_settings.group_whitelist`: 群聊白名单，按完整 UMO 限制
-- `permission_settings.admin_whitelist`: 管理员标识列表，支持会话 UMO 或管理员用户的 FriendMessage UMO
-- `permission_settings.allow_non_admin_commands`: 是否允许非管理员使用管理指令
-- `permission_settings.non_admin_allowed_commands`: 允许非管理员使用的指令列表
+- 乐土攻略仓库地址
+- Git 代理方式
+- 自定义 Git 代理地址
+- 启用私聊回复
+- 启用群聊回复
+- 私聊白名单
+- 群聊白名单
+- 管理员标识列表
+- 允许非管理员使用管理指令
+- 允许非管理员使用的指令列表
 
-Git 代理配置说明：
+> 代理会同时作用于首次获取攻略和后续更新若本地仓库已存在，插件会在更新前自动同步 origin 远端地址到当前配置
 
-- `repository_settings.repository_proxy_method=direct`: 直连 GitHub。
-- `repository_settings.repository_proxy_method=https://edgeone.gh-proxy.com`: 使用 EdgeOne 代理。
-- `repository_settings.repository_proxy_method=https://hk.gh-proxy.com/`: 使用香港代理。
-- `repository_settings.repository_proxy_method=https://gh-proxy.com/`: 使用 gh-proxy 代理。
-- `repository_settings.repository_proxy_method=https://gh.lk.cc`: 使用 gh.lk.cc 代理。
-- `repository_settings.repository_proxy_method=custom`: 使用 `repository_settings.repository_proxy_custom_url` 作为代理前缀。
+权限控制说明：
 
-代理会同时作用于首次获取攻略和后续更新。若本地仓库已存在，插件会在更新前自动同步 origin 远端地址到当前配置。
+- 如果你需要手动配置管理员或白名单，先获取对应会话的 UMO
+- 可通过 AstrBot 内置的 `/sid` 指令查看当前会话的完整 UMO，再把它填入“管理员标识列表”“私聊白名单”或“群聊白名单”
+- UMO 的格式一般为 `平台名:消息类型:会话ID`，例如群聊常见为 `default:GroupMessage:123456789`，私聊常见为 `default:FriendMessage:123456789`
+- 如果要让某个用户获得管理权限，优先把该用户的管理员 UMO 填入“管理员标识列表”；如果只是临时开放部分指令，也可以直接配置“允许非管理员使用的指令列表”
+- 其余权限规则可直接查看插件配置页中的说明
 
-权限控制规则如下：
+## 常见问题
 
-- 若平台事件能直接提供管理员身份，则管理员默认可用全部管理指令，非管理员仅可使用 `permission_settings.non_admin_allowed_commands` 中列出的指令。
-- 若平台无法提供管理员身份，可以通过 `permission_settings.admin_whitelist` 手动填写管理员会话 UMO，或管理员用户的 FriendMessage UMO；匹配到名单的用户可用全部管理指令。
-- 若 `permission_settings.admin_whitelist` 留空且平台也未暴露管理员身份，插件保持升级前的兼容行为，不会额外拦截现有指令。
-- 若 `permission_settings.allow_non_admin_commands` 为关闭，则非管理员无法使用任何管理指令。
-- `permission_settings.non_admin_allowed_commands` 现使用 `list + options` 展示；只需勾选主指令名即可，对应别名和内部命令标识也会自动生效。若 `permission_settings.allow_non_admin_commands` 为开启且该配置留空，则非管理员默认可使用全部管理指令。配置面板中的 `hint` 会按换行逐条说明各指令用途。
 
-本地持久化目录固定为 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy`，攻略仓库目录固定为 `ElysianRealm-Data`。
-
-## 更新日志
-
-更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+1. 执行 `/获取乐土攻略` 失败时，可先检查网络和代理配置；若本地仓库状态异常，可直接尝试 `/强制获取乐土攻略`
+2. 当前版本更新图片后不会自动补全新增图片的关键词，需要手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>`
+3. 如果私聊或群聊发送关键词没有回复，请检查“启用私聊回复”“启用群聊回复”以及对应白名单配置
+4. 如果你修改了仓库地址或代理配置，但更新仍然异常，可以重新执行 `/强制获取乐土攻略`，强制删除旧仓库并重新浅克隆
 
 ## 未来规划
 
-- 在图片库中补充和维护索引表，减少手动维护关键词的成本。
-- 结合图片库索引表，在后续版本中实现更新仓库后自动同步关键词，尽量减少手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 的场景。
-
+- 在图片库中补充和维护索引表，减少手动维护关键词的成本
+- 结合图片库索引表，在后续版本中实现更新仓库后自动同步关键词，尽量减少手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 的场景
 
 ## 开发参考
 
-- [AstrBot Repo](https://github.com/AstrBotDevs/AstrBot)
+
 - [AstrBot 插件开发文档](https://docs.astrbot.app/dev/star/plugin-new.html)
-- [原始 Mirai 插件](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)
+- [Bh3-ElysianRealm-Strategy](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)
+- [ElysianRealm-Data 攻略图仓库](https://github.com/MskTim/ElysianRealm-Data)
+- 乐土攻略图源：崩坏3通讯中心（月光中心）
+- 图片素材来源于网络，仅供交流学习使用

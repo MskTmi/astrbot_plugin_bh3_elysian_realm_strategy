@@ -1,6 +1,6 @@
 name: astrbot_plugin_bh3_elysian_realm_strategy
 display_name: 崩坏3乐土攻略
-desc: 基于 AstrBot 的崩坏3往世乐土攻略插件，支持多流派共享关键词与 git 更新时间追踪。
+desc: 基于 AstrBot 的崩坏3往世乐土攻略插件，支持多流派共享关键词与 git 更新时间追踪
 version: v0.2.0
 author: MskTim
 repo: https://github.com/MskTmi/astrbot_plugin_bh3_elysian_realm_strategy.git

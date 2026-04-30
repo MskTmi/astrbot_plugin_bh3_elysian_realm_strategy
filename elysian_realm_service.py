@@ -4,6 +4,7 @@ import asyncio
 import json
 import locale
 import re
+import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -363,6 +364,7 @@ class ElysianRealmService:
     async def clone_repository(self) -> dict[str, object]:
         # 首次克隆攻略仓库并初始化本地索引与时间戳。
         if self.is_git_repository():
+            await self.ensure_remote_url()
             self.scan_images()
             self.sync_discovered_images()
             await self.refresh_timestamps(overwrite=False)
@@ -397,10 +399,44 @@ class ElysianRealmService:
             "stderr": stderr,
         }
 
+    async def force_clone_repository(self) -> dict[str, object]:
+        # 删除现有攻略仓库目录后，重新浅克隆远端仓库。
+        if self.repo_path.exists():
+            try:
+                shutil.rmtree(self.repo_path)
+            except OSError as exc:
+                raise GitCommandError(
+                    f"无法删除现有攻略仓库目录: {self.repo_path}"
+                ) from exc
+
+        self._image_index = {}
+        self.repo_path.parent.mkdir(parents=True, exist_ok=True)
+
+        returncode, stdout, stderr = await self.run_git(
+            "clone",
+            "--depth=1",
+            self.repository_url,
+            str(self.repo_path),
+            cwd=self.repo_path.parent,
+        )
+        if returncode != 0:
+            raise GitCommandError(stderr or stdout or "git clone 执行失败。")
+
+        self.scan_images()
+        self.sync_discovered_images()
+        await self.refresh_timestamps(overwrite=True)
+        return {
+            "image_count": len(self._image_index),
+            "stdout": stdout,
+            "stderr": stderr,
+        }
+
     async def update_repository(self) -> dict[str, object]:
         # 更新本地攻略仓库并返回本次变更摘要。
         if not self.is_git_repository():
             raise GitCommandError("未找到本地攻略仓库，请先执行:\n/获取乐土攻略")
+
+        await self.ensure_remote_url()
 
         old_commit = await self.get_head_commit()
         await self.validate_commit_hash(old_commit)
@@ -571,6 +607,31 @@ class ElysianRealmService:
         if not stdout.strip():
             return None
         return normalize_timestamp(stdout.splitlines()[-1].strip())
+
+    async def ensure_remote_url(self) -> None:
+        # 确保本地仓库 origin 远端地址与当前配置一致。
+        returncode, stdout, stderr = await self.run_git(
+            "remote",
+            "get-url",
+            "origin",
+            cwd=self.repo_path,
+        )
+        if returncode != 0:
+            raise GitCommandError(stderr or stdout or "无法读取当前仓库远端地址。")
+
+        current_remote_url = stdout.splitlines()[-1].strip()
+        if current_remote_url == self.repository_url:
+            return
+
+        returncode, stdout, stderr = await self.run_git(
+            "remote",
+            "set-url",
+            "origin",
+            self.repository_url,
+            cwd=self.repo_path,
+        )
+        if returncode != 0:
+            raise GitCommandError(stderr or stdout or "无法更新当前仓库远端地址。")
 
     async def run_git(self, *args: str, cwd: Path) -> tuple[int, str, str]:
         # 异步执行 git 命令并返回退出码、标准输出和标准错误。

@@ -1,58 +1,97 @@
 {
-  "repository_url": {
-    "description": "乐土攻略仓库地址",
-    "type": "string",
-    "default": "https://github.com/MskTmi/ElysianRealm-Data.git",
-    "hint": "插件会从该仓库克隆和更新攻略图片。本地持久化目录固定为 data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy。"
+  "repository_settings": {
+    "description": "攻略仓库配置",
+    "type": "object",
+    "items": {
+      "repository_url": {
+        "description": "乐土攻略仓库地址",
+        "type": "string",
+        "default": "https://github.com/MskTmi/ElysianRealm-Data.git",
+        "hint": "插件会从该仓库克隆和更新攻略图片。本地持久化目录固定为 data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy。"
+      },
+      "repository_proxy_method": {
+        "type": "string",
+        "description": "Git 代理方式",
+        "hint": "网络较差时可选择预设代理地址；选择 custom 后，插件会使用 repository_proxy_custom_url 作为代理前缀。",
+        "default": "direct",
+        "options": [
+          "direct",
+          "https://edgeone.gh-proxy.com",
+          "https://hk.gh-proxy.com/",
+          "https://gh-proxy.com/",
+          "https://gh.lk.cc",
+          "custom"
+        ]
+      },
+      "repository_proxy_custom_url": {
+        "description": "自定义 Git 代理地址",
+        "type": "string",
+        "default": "",
+        "hint": "仅在 repository_proxy_method 为 custom 时生效。示例: https://edgeone.gh-proxy.com"
+      }
+    }
   },
-  "enable_group_reply": {
-    "description": "启用群聊回复",
-    "type": "bool",
-    "default": true,
-    "hint": "关闭后，插件不会在群聊中根据关键词自动回复。"
+  "reply_settings": {
+    "description": "自动回复配置",
+    "type": "object",
+    "items": {
+      "enable_group_reply": {
+        "description": "启用群聊回复",
+        "type": "bool",
+        "default": true,
+        "hint": "关闭后，插件不会在群聊中根据关键词自动回复。"
+      },
+      "group_whitelist": {
+        "description": "群聊白名单",
+        "type": "list",
+        "default": [],
+        "hint": "留空表示允许所有群聊会话；如需限制，请输入完整的 UMO，可通过 /sid 指令快捷获取。格式: {platform_name}:{message_type}:{session_id}。{platform_name} 为 WebUI 中的 机器人 一栏自定义的机器人名称。{message_type} 群聊通常使用 GroupMessage 例如 default:GroupMessage:123456789 若你的平台适配器返回其他 message_type，请以 /sid 的实际输出为准。"
+      },
+      "enable_private_reply": {
+        "description": "启用私聊回复",
+        "type": "bool",
+        "default": false,
+        "hint": "关闭后，插件不会在私聊中根据关键词自动回复。"
+      },
+      "private_whitelist": {
+        "description": "私聊白名单",
+        "type": "list",
+        "default": [],
+        "hint": "留空表示允许所有私聊会话；如需限制，请输入完整的 UMO，可通过 /sid 指令快捷获取。格式: {platform_name}:{message_type}:{session_id}。{platform_name} 为 WebUI 中的 机器人 一栏自定义的机器人名称。{message_type} 参数为 FriendMessage 例如 default:FriendMessage:123456789 若你的平台适配器返回其他 message_type，请以 /sid 的实际输出为准。"
+      }
+    }
   },
-  "group_whitelist": {
-    "description": "群聊白名单",
-    "type": "list",
-    "default": [],
-    "hint": "留空表示允许所有群聊会话；如需限制，请输入完整的 UMO，可通过 /sid 指令快捷获取。格式: {platform_name}:{message_type}:{session_id}。{platform_name} 为 WebUI 中的 机器人 一栏自定义的机器人名称。{message_type} 群聊通常使用 GroupMessage 例如 default:GroupMessage:123456789 若你的平台适配器返回其他 message_type，请以 /sid 的实际输出为准。"
-  },
-  "enable_private_reply": {
-    "description": "启用私聊回复",
-    "type": "bool",
-    "default": false,
-    "hint": "关闭后，插件不会在私聊中根据关键词自动回复。"
-  },
-  "private_whitelist": {
-    "description": "私聊白名单",
-    "type": "list",
-    "default": [],
-    "hint": "留空表示允许所有私聊会话；如需限制，请输入完整的 UMO，可通过 /sid 指令快捷获取。格式: {platform_name}:{message_type}:{session_id}。{platform_name} 为 WebUI 中的 机器人 一栏自定义的机器人名称。{message_type} 参数为 FriendMessage 例如 default:FriendMessage:123456789 若你的平台适配器返回其他 message_type，请以 /sid 的实际输出为准。"
-  },
-  "admin_whitelist": {
-    "description": "管理员标识列表",
-    "type": "list",
-    "default": [],
-    "hint": "用于补充或覆盖平台侧管理员识别。支持填写完整会话 UMO，或管理员用户的 FriendMessage UMO。示例: NapCat:FriendMessage:123456789。留空时，插件优先沿用平台原生管理员判断；若平台无法提供管理员身份，插件保持现有全部指令可用的兼容行为。"
-  },
-  "allow_non_admin_commands": {
-    "description": "允许非管理员使用管理指令",
-    "type": "bool",
-    "default": true,
-    "hint": "关闭后，非管理员将无法使用任何管理指令；开启后，再结合 non_admin_allowed_commands 控制允许使用哪些指令。"
-  },
-  "non_admin_allowed_commands": {
-    "description": "允许非管理员使用的指令列表",
-    "type": "list",
-    "default": [],
-    "options": [
-      "获取乐土攻略",
-      "更新乐土攻略",
-      "添加乐土关键词",
-      "删除乐土关键词",
-      "乐土关键词列表",
-      "RealmCommand"
-    ],
-    "hint": "可直接从 options 中选择要开放给非管理员的主指令名；填写主指令名后，对应别名和内部命令标识也会自动生效。若 allow_non_admin_commands 为关闭，则此项不会生效；若 allow_non_admin_commands 为开启且此项留空，则非管理员默认可使用全部管理指令。\n\n获取乐土攻略: 首次克隆攻略仓库并建立本地索引。\n更新乐土攻略: 拉取最新攻略仓库提交，并刷新受影响图片的更新时间。\n添加乐土关键词: 为指定攻略图追加一个或多个触发关键词。\n删除乐土关键词: 删除指定攻略图的关键词配置。\n乐土关键词列表: 查看当前索引中的图片名和关键词列表。\nRealmCommand: 兼容 Mirai 旧版 add、del、list 命令格式。"
+  "permission_settings": {
+    "description": "权限控制配置",
+    "type": "object",
+    "items": {
+      "admin_whitelist": {
+        "description": "管理员标识列表",
+        "type": "list",
+        "default": [],
+        "hint": "用于补充或覆盖平台侧管理员识别。支持填写完整会话 UMO，或管理员用户的 FriendMessage UMO。示例: NapCat:FriendMessage:123456789。留空时，插件优先沿用平台原生管理员判断；若平台无法提供管理员身份，插件保持现有全部指令可用的兼容行为。"
+      },
+      "allow_non_admin_commands": {
+        "description": "允许非管理员使用管理指令",
+        "type": "bool",
+        "default": true,
+        "hint": "关闭后，非管理员将无法使用任何管理指令；开启后，再结合 non_admin_allowed_commands 控制允许使用哪些指令。"
+      },
+      "non_admin_allowed_commands": {
+        "description": "允许非管理员使用的指令列表",
+        "type": "list",
+        "default": [],
+        "options": [
+          "获取乐土攻略",
+          "强制获取乐土攻略",
+          "更新乐土攻略",
+          "添加乐土关键词",
+          "删除乐土关键词",
+          "乐土关键词列表",
+          "RealmCommand"
+        ],
+        "hint": "可直接从 options 中选择要开放给非管理员的主指令名；填写主指令名后，对应别名和内部命令标识也会自动生效。若 allow_non_admin_commands 为关闭，则此项不会生效；若 allow_non_admin_commands 为开启且此项留空，则非管理员默认可使用全部管理指令。\n\n获取乐土攻略: 首次克隆攻略仓库并建立本地索引。\n强制获取乐土攻略: 删除现有攻略仓库目录并重新浅克隆远端仓库，适用于仓库文件被误改或 .git 目录损坏时恢复。\n更新乐土攻略: 拉取最新攻略仓库提交，并刷新受影响图片的更新时间。\n添加乐土关键词: 为指定攻略图追加一个或多个触发关键词。\n删除乐土关键词: 删除指定攻略图的关键词配置。\n乐土关键词列表: 查看当前索引中的图片名和关键词列表。\nRealmCommand: 兼容 Mirai 旧版 add、del、list 命令格式。"
+      }
+    }
   }
 }

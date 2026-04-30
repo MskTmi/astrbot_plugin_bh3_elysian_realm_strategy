@@ -26,8 +26,22 @@ except ImportError:
 PLUGIN_NAME = "astrbot_plugin_bh3_elysian_realm_strategy"
 INDEX_FILE_NAME = "elysian-realm-index.json"
 LIST_FORWARD_CHUNK_SIZE = 10
+DEFAULT_REPOSITORY_URL = "https://github.com/MskTmi/ElysianRealm-Data.git"
+REPOSITORY_PROXY_PRESETS: dict[str, str] = {
+    "direct": "",
+    "edgeone": "https://edgeone.gh-proxy.com",
+    "hk": "https://hk.gh-proxy.com/",
+    "gh_proxy": "https://gh-proxy.com/",
+    "gh_lk": "https://gh.lk.cc",
+    "custom": "",
+}
 COMMAND_ALIASES: dict[str, set[str]] = {
     "fetch_strategy": {"获取乐土攻略", "GetStrategy", "fetch_strategy"},
+    "force_fetch_strategy": {
+        "强制获取乐土攻略",
+        "ForceGetStrategy",
+        "force_fetch_strategy",
+    },
     "update_strategy": {"更新乐土攻略", "UpdateStrategy", "update_strategy"},
     "add_strategy_keywords": {"添加乐土关键词", "RealmAdd", "add_strategy_keywords"},
     "legacy_realm_command": {
@@ -49,7 +63,7 @@ COMMAND_ALIASES: dict[str, set[str]] = {
     PLUGIN_NAME,
     "MskTim",
     "崩坏3往世乐土攻略插件",
-    "0.1.0",
+    "0.2.0",
 )
 class Bh3ElysianRealmStrategyPlugin(Star):
     # AstrBot 乐土攻略插件入口，负责命令分发与消息回复。
@@ -67,10 +81,38 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         storage_dir = data_path / "plugin_data" / plugin_name
         repo_directory_name = "ElysianRealm-Data"
         repository_url = str(
-            self.config.get("repository_url")
-            or "https://github.com/MskTmi/ElysianRealm-Data.git"
+            self._get_config_value(
+                "repository_settings",
+                "repository_url",
+                default=DEFAULT_REPOSITORY_URL,
+                legacy_key="repository_url",
+            )
+            or DEFAULT_REPOSITORY_URL
+        ).strip()
+        repository_proxy_method = str(
+            self._get_config_value(
+                "repository_settings",
+                "repository_proxy_method",
+                default="direct",
+                legacy_key="repository_proxy_method",
+            )
+            or "direct"
+        ).strip()
+        repository_proxy_custom_url = str(
+            self._get_config_value(
+                "repository_settings",
+                "repository_proxy_custom_url",
+                default="",
+                legacy_key="repository_proxy_custom_url",
+            )
+            or ""
         ).strip()
         strategies_template_path = plugin_root / INDEX_FILE_NAME
+        repository_url = self._build_repository_url(
+            repository_url,
+            repository_proxy_method,
+            repository_proxy_custom_url,
+        )
 
         try:
             self.service = ElysianRealmService(
@@ -84,22 +126,55 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             self.service = None
             self.service_error_message = self._build_service_error_message(exc)
             self._log_unexpected_error("初始化乐土攻略服务", exc)
-        self.enable_private_reply = self._get_bool_config("enable_private_reply", False)
-        self.enable_group_reply = self._get_bool_config("enable_group_reply", True)
+        self.enable_private_reply = self._get_bool_config(
+            "reply_settings",
+            "enable_private_reply",
+            default=False,
+            legacy_key="enable_private_reply",
+        )
+        self.enable_group_reply = self._get_bool_config(
+            "reply_settings",
+            "enable_group_reply",
+            default=True,
+            legacy_key="enable_group_reply",
+        )
         self.allow_non_admin_commands = self._get_bool_config(
-            "allow_non_admin_commands", True
+            "permission_settings",
+            "allow_non_admin_commands",
+            default=True,
+            legacy_key="allow_non_admin_commands",
         )
         self.private_whitelist = self._parse_whitelist(
-            self.config.get("private_whitelist", "")
+            self._get_config_value(
+                "reply_settings",
+                "private_whitelist",
+                default="",
+                legacy_key="private_whitelist",
+            )
         )
         self.group_whitelist = self._parse_whitelist(
-            self.config.get("group_whitelist", "")
+            self._get_config_value(
+                "reply_settings",
+                "group_whitelist",
+                default="",
+                legacy_key="group_whitelist",
+            )
         )
         self.admin_whitelist = self._parse_whitelist(
-            self.config.get("admin_whitelist", [])
+            self._get_config_value(
+                "permission_settings",
+                "admin_whitelist",
+                default=[],
+                legacy_key="admin_whitelist",
+            )
         )
         self.non_admin_allowed_commands = self._parse_command_allowlist(
-            self.config.get("non_admin_allowed_commands", [])
+            self._get_config_value(
+                "permission_settings",
+                "non_admin_allowed_commands",
+                default=[],
+                legacy_key="non_admin_allowed_commands",
+            )
         )
 
     async def initialize(self):
@@ -198,6 +273,37 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             return
 
         yield event.plain_result("更新的角色: " + ", ".join(updated_names))
+
+    @filter.command("强制获取乐土攻略", alias={"ForceGetStrategy"})
+    async def force_fetch_strategy(self, event: AstrMessageEvent):
+        """删除现有攻略仓库并重新浅克隆远端仓库。
+
+        示例: /强制获取乐土攻略
+        """
+        event.stop_event()
+        permission_denied = self._ensure_command_access(event, "force_fetch_strategy")
+        if permission_denied is not None:
+            yield permission_denied
+            return
+        service_unavailable = self._ensure_service_available(event)
+        if service_unavailable is not None:
+            yield service_unavailable
+            return
+        yield event.plain_result("正在强制重拉乐土攻略仓库并重建索引，请稍候...")
+        try:
+            result = await self.service.force_clone_repository()  # type: ignore[union-attr]
+        except GitCommandError as exc:
+            logger.error(f"强制获取乐土攻略失败: {exc}")
+            yield event.plain_result(f"强制获取乐土攻略失败: {exc}")
+            return
+        except Exception as exc:
+            yield self._handle_command_exception(event, "强制获取乐土攻略", exc)
+            return
+
+        yield event.plain_result(
+            "乐土攻略仓库已强制重拉完成。"
+            f" 当前共索引 {result['image_count']} 张攻略图，可直接发送关键词查询。"
+        )
 
     @filter.command("添加乐土关键词", alias={"RealmAdd"})
     async def add_strategy_keywords(
@@ -458,7 +564,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         display_name = self._get_command_display_name(command_key)
         return event.plain_result(
             f"指令 {display_name} 仅管理员可用。"
-            "如需开放给非管理员，请将该指令加入 non_admin_allowed_commands 配置。"
+            "如需开放给非管理员，请将该指令加入权限配置中的允许非管理员使用的指令列表。"
         )
 
     def _ensure_service_available(self, event: AstrMessageEvent):
@@ -688,9 +794,34 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             return parts[1].strip()
         return ""
 
-    def _get_bool_config(self, key: str, default: bool) -> bool:
+    def _get_config_value(
+        self,
+        *keys: str,
+        default: object,
+        legacy_key: str | None = None,
+    ) -> object:
+        # 优先读取新的 object 分组配置，并兼容旧版平铺配置键名。
+        current: object = self.config
+        for key in keys:
+            if not isinstance(current, dict) or key not in current:
+                current = None
+                break
+            current = current[key]
+
+        if current is not None:
+            return current
+        if legacy_key is not None:
+            return self.config.get(legacy_key, default)
+        return default
+
+    def _get_bool_config(
+        self,
+        *keys: str,
+        default: bool,
+        legacy_key: str | None = None,
+    ) -> bool:
         # 将布尔配置项解析为最终布尔值。
-        value = self.config.get(key, default)
+        value = self._get_config_value(*keys, default=default, legacy_key=legacy_key)
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
@@ -709,3 +840,27 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             value = raw_value.strip()
             return {value} if value else set()
         return set()
+
+    def _build_repository_url(
+        self,
+        repository_url: str,
+        proxy_method: str,
+        custom_proxy_url: str,
+    ) -> str:
+        # 根据代理配置生成最终用于 git 操作的仓库地址。
+        base_url = repository_url.strip() or DEFAULT_REPOSITORY_URL
+        raw_method = proxy_method.strip()
+        normalized_method = raw_method.lower() or "direct"
+
+        if normalized_method == "custom":
+            proxy_prefix = custom_proxy_url.strip()
+        elif raw_method.startswith(("http://", "https://")):
+            proxy_prefix = raw_method
+        else:
+            proxy_prefix = REPOSITORY_PROXY_PRESETS.get(normalized_method, "")
+
+        proxy_prefix = proxy_prefix.strip()
+        if not proxy_prefix:
+            return base_url
+
+        return f"{proxy_prefix.rstrip('/')}/{base_url.lstrip('/')}"

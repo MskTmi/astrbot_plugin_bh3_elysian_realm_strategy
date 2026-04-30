@@ -13,17 +13,20 @@
 ## 指令
 
 - `/获取乐土攻略`
-	首次克隆攻略仓库并建立本地索引。
+	首次克隆攻略仓库并建立本地索引
+- `/强制获取乐土攻略`
+	删除现有攻略仓库目录并重新浅克隆远端仓库，适用于解决无法正常获取或是更新导致的奇怪问题
 - `/更新乐土攻略`
 	拉取最新提交，识别本次更新涉及的图片角色，并更新对应时间戳。
+	目前执行 `/更新乐土攻略` 后，如有新增图片或新增角色，仍需要使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 手动补充关键词。
 - `/添加乐土关键词 <图片名> <关键词1,关键词2>`
-	为某张攻略图追加关键词。
+	为某张攻略图追加关键词
 - `/删除乐土关键词 <图片名>`
-	删除某张攻略图的关键词配置。
+	删除某张攻略图的关键词配置
 - `/乐土关键词列表`
 	查看当前索引中的图片名和关键词
 - `/RealmCommand list`
-	兼容 Mirai 旧命令格式；输出行为与 `/乐土关键词列表` 一致。
+	兼容 Mirai 旧命令格式；输出行为与 `/乐土关键词列表` 一致
 
 ## 使用示例
 
@@ -61,26 +64,55 @@ Bot: [发送 Felis_Attack 图片]
 
 ## 插件配置
 
-插件通过 `_conf_schema.json` 暴露了以下可配置项：
+插件通过 `_conf_schema.json` 暴露了以下分组配置：
 
-- `repository_url`: 攻略仓库地址
-- `enable_private_reply`: 私聊自动回复开关
-- `enable_group_reply`: 群聊自动回复开关
-- `private_whitelist`: 私聊白名单，按完整 UMO 限制
-- `group_whitelist`: 群聊白名单，按完整 UMO 限制
-- `admin_whitelist`: 管理员标识列表，支持会话 UMO 或管理员用户的 FriendMessage UMO
-- `allow_non_admin_commands`: 是否允许非管理员使用管理指令
-- `non_admin_allowed_commands`: 允许非管理员使用的指令列表
+- `repository_settings`: 仓库同步配置
+- `reply_settings`: 自动回复配置
+- `permission_settings`: 权限控制配置
+
+主要配置项如下：
+
+- `repository_settings.repository_url`: 攻略仓库地址
+- `repository_settings.repository_proxy_method`: Git 拉取代理方式
+- `repository_settings.repository_proxy_custom_url`: 自定义 Git 代理地址
+- `reply_settings.enable_private_reply`: 私聊自动回复开关
+- `reply_settings.enable_group_reply`: 群聊自动回复开关
+- `reply_settings.private_whitelist`: 私聊白名单，按完整 UMO 限制
+- `reply_settings.group_whitelist`: 群聊白名单，按完整 UMO 限制
+- `permission_settings.admin_whitelist`: 管理员标识列表，支持会话 UMO 或管理员用户的 FriendMessage UMO
+- `permission_settings.allow_non_admin_commands`: 是否允许非管理员使用管理指令
+- `permission_settings.non_admin_allowed_commands`: 允许非管理员使用的指令列表
+
+Git 代理配置说明：
+
+- `repository_settings.repository_proxy_method=direct`: 直连 GitHub。
+- `repository_settings.repository_proxy_method=https://edgeone.gh-proxy.com`: 使用 EdgeOne 代理。
+- `repository_settings.repository_proxy_method=https://hk.gh-proxy.com/`: 使用香港代理。
+- `repository_settings.repository_proxy_method=https://gh-proxy.com/`: 使用 gh-proxy 代理。
+- `repository_settings.repository_proxy_method=https://gh.lk.cc`: 使用 gh.lk.cc 代理。
+- `repository_settings.repository_proxy_method=custom`: 使用 `repository_settings.repository_proxy_custom_url` 作为代理前缀。
+
+代理会同时作用于首次获取攻略和后续更新。若本地仓库已存在，插件会在更新前自动同步 origin 远端地址到当前配置。
 
 权限控制规则如下：
 
-- 若平台事件能直接提供管理员身份，则管理员默认可用全部管理指令，非管理员仅可使用 `non_admin_allowed_commands` 中列出的指令。
-- 若平台无法提供管理员身份，可以通过 `admin_whitelist` 手动填写管理员会话 UMO，或管理员用户的 FriendMessage UMO；匹配到名单的用户可用全部管理指令。
-- 若 `admin_whitelist` 留空且平台也未暴露管理员身份，插件保持升级前的兼容行为，不会额外拦截现有指令。
-- 若 `allow_non_admin_commands` 为关闭，则非管理员无法使用任何管理指令。
-- `non_admin_allowed_commands` 现使用 `list + options` 展示；只需勾选主指令名即可，对应别名和内部命令标识会自动生效。若 `allow_non_admin_commands` 为开启且该配置留空，则非管理员默认可使用全部管理指令。配置面板中的 `hint` 会按换行逐条说明各指令用途。
+- 若平台事件能直接提供管理员身份，则管理员默认可用全部管理指令，非管理员仅可使用 `permission_settings.non_admin_allowed_commands` 中列出的指令。
+- 若平台无法提供管理员身份，可以通过 `permission_settings.admin_whitelist` 手动填写管理员会话 UMO，或管理员用户的 FriendMessage UMO；匹配到名单的用户可用全部管理指令。
+- 若 `permission_settings.admin_whitelist` 留空且平台也未暴露管理员身份，插件保持升级前的兼容行为，不会额外拦截现有指令。
+- 若 `permission_settings.allow_non_admin_commands` 为关闭，则非管理员无法使用任何管理指令。
+- `permission_settings.non_admin_allowed_commands` 现使用 `list + options` 展示；只需勾选主指令名即可，对应别名和内部命令标识也会自动生效。若 `permission_settings.allow_non_admin_commands` 为开启且该配置留空，则非管理员默认可使用全部管理指令。配置面板中的 `hint` 会按换行逐条说明各指令用途。
 
 本地持久化目录固定为 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy`，攻略仓库目录固定为 `ElysianRealm-Data`。
+
+## 更新日志
+
+更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 未来规划
+
+- 在图片库中补充和维护索引表，减少手动维护关键词的成本。
+- 结合图片库索引表，在后续版本中实现更新仓库后自动同步关键词，尽量减少手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 的场景。
+
 
 ## 开发参考
 

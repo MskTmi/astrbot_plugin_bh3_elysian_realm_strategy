@@ -41,6 +41,8 @@ Bot: [自动发送最近更新的那一张猫猫乐土攻略图]
 用户: /RealmCommand add Felis 猫猫乐土,菲利丝乐土
 Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 ```
+<img width="475" height="523" alt="20f93e837418ed68cef4558f1b2dd1f0" src="https://github.com/user-attachments/assets/bd76d212-4596-4a1d-a015-36bb56d2cf75" />
+
 
 ## 功能
 
@@ -93,6 +95,7 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
   }
 }
 ```
+<img width="1179" height="1297" alt="20f93e837418ed68cef4558f1b2dd1f0" src="https://github.com/user-attachments/assets/32425540-fa1a-4fa6-a1b2-726f9563b67e" />
 
 ## 自定义攻略
 
@@ -148,7 +151,6 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 - 结合图片库索引表，在后续版本中实现更新仓库后自动同步关键词，尽量减少手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 的场景
 
 ## 开发参考
-
 
 - [AstrBot 插件开发文档](https://docs.astrbot.app/dev/star/plugin-new.html)
 - [Bh3-ElysianRealm-Strategy](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)

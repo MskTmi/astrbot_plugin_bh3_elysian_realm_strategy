@@ -69,7 +69,7 @@
         "description": "管理员标识列表",
         "type": "list",
         "default": [],
-        "hint": "用于补充或覆盖平台侧管理员识别。支持填写完整会话 UMO，或管理员用户的 FriendMessage UMO。示例: NapCat:FriendMessage:123456789。留空时，插件优先沿用平台原生管理员判断；若平台无法提供管理员身份，插件保持现有全部指令可用的兼容行为。"
+        "hint": "用于补充或覆盖平台侧管理员识别。支持填写完整会话 UMO，或管理员用户的 FriendMessage UMO。示例: default:FriendMessage:123456789。留空时，插件优先沿用平台原生管理员判断；若平台无法提供管理员身份，插件保持现有全部指令可用的兼容行为。"
       },
       "allow_non_admin_commands": {
         "description": "允许非管理员使用管理指令",

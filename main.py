@@ -66,9 +66,9 @@ COMMAND_ALIASES: dict[str, set[str]] = {
     "0.2.0",
 )
 class Bh3ElysianRealmStrategyPlugin(Star):
-    # AstrBot 乐土攻略插件入口，负责命令分发与消息回复。
+    # AstrBot 乐土攻略插件入口，负责命令分发与消息回复
     def __init__(self, context: Context, config: AstrBotConfig | None = None):
-        # 初始化插件配置、存储路径和攻略服务。
+        # 初始化插件配置、存储路径和攻略服务
         super().__init__(context)
         self.config = config or {}
         self.service: ElysianRealmService | None = None
@@ -178,11 +178,11 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         )
 
     async def initialize(self):
-        # 在插件启用时刷新本地索引状态。
+        # 在插件启用时刷新本地索引状态
         logger.info("乐土攻略已启用！感觉如何？")
         service = self.service
         if service is None:
-            logger.error(self.service_error_message or "乐土攻略服务未成功初始化。")
+            logger.error(self.service_error_message or "乐土攻略服务未成功初始化")
             return
 
         try:
@@ -194,12 +194,12 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             self._log_unexpected_error("初始化乐土攻略索引", exc)
 
     async def terminate(self):
-        # 在插件关闭时记录结束日志。
-        logger.info("至此，乐土攻略被关闭了。")
+        # 在插件关闭时记录结束日志
+        logger.info("至此，乐土攻略被关闭了")
 
     @filter.command("获取乐土攻略", alias={"GetStrategy"})
     async def fetch_strategy(self, event: AstrMessageEvent):
-        """拉取乐土攻略仓库并建立本地索引。
+        """拉取乐土攻略仓库并建立本地索引
 
         示例: /获取乐土攻略
         """
@@ -225,19 +225,19 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
         if result["already_exists"]:
             yield event.plain_result(
-                "本地已存在攻略仓库，无需重复获取。"
-                f" 当前共索引 {result['image_count']} 张攻略图。"
+                "本地已存在攻略仓库，无需重复获取"
+                f" 当前共索引 {result['image_count']} 张攻略图"
             )
             return
 
         yield event.plain_result(
-            "乐土攻略获取完成。"
-            f" 当前共索引 {result['image_count']} 张攻略图，可直接发送关键词查询。"
+            "乐土攻略获取完成"
+            f" 当前共索引 {result['image_count']} 张攻略图，可直接发送关键词查询"
         )
 
     @filter.command("更新乐土攻略", alias={"UpdateStrategy"})
     async def update_strategy(self, event: AstrMessageEvent):
-        """更新本地攻略仓库并自动记录图片更新时间。
+        """更新本地攻略仓库并自动记录图片更新时间
 
         示例: /更新乐土攻略
         """
@@ -262,13 +262,13 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             return
 
         if result["already_up_to_date"]:
-            yield event.plain_result("已经是最新了。")
+            yield event.plain_result("已经是最新了")
             return
 
         updated_names = result["updated_names"]
         if not updated_names:
             yield event.plain_result(
-                "仓库更新完成，但本次提交中没有检测到攻略图片变更。"
+                "仓库更新完成，但本次提交中没有检测到攻略图片变更"
             )
             return
 
@@ -276,7 +276,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
     @filter.command("强制获取乐土攻略", alias={"ForceGetStrategy"})
     async def force_fetch_strategy(self, event: AstrMessageEvent):
-        """删除现有攻略仓库并重新浅克隆远端仓库。
+        """删除现有攻略仓库并重新浅克隆远端仓库
 
         示例: /强制获取乐土攻略
         """
@@ -301,8 +301,8 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             return
 
         yield event.plain_result(
-            "乐土攻略仓库已强制重拉完成。"
-            f" 当前共索引 {result['image_count']} 张攻略图，可直接发送关键词查询。"
+            "乐土攻略仓库已强制重拉完成"
+            f" 当前共索引 {result['image_count']} 张攻略图，可直接发送关键词查询"
         )
 
     @filter.command("添加乐土关键词", alias={"RealmAdd"})
@@ -312,7 +312,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         image_name: str,
         keywords: str,
     ):
-        """为攻略图添加关键词，多个关键词使用逗号分隔。
+        """为攻略图添加关键词，多个关键词使用逗号分隔
 
         示例: /添加乐土关键词 Felis 猫猫乐土,菲利丝乐土
         """
@@ -329,7 +329,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             keyword_list = split_keywords(keywords)
             if not keyword_list:
                 yield event.plain_result(
-                    "请至少提供一个关键词，多个关键词可用逗号分隔。"
+                    "请至少提供一个关键词，多个关键词可用逗号分隔"
                 )
                 return
 
@@ -348,7 +348,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         image_name: str = "",
         keywords: str = "",
     ):
-        """兼容 Mirai 版本的 /RealmCommand add|del|list 指令格式。
+        """兼容 Mirai 版本的 /RealmCommand add|del|list 指令格式
 
         示例:
         /RealmCommand add Felis 猫猫乐土,菲利丝乐土
@@ -377,7 +377,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
                 keyword_list = split_keywords(keywords)
                 if not keyword_list:
                     yield event.plain_result(
-                        "请至少提供一个关键词，多个关键词可用逗号分隔。"
+                        "请至少提供一个关键词，多个关键词可用逗号分隔"
                     )
                     return
 
@@ -394,9 +394,9 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
                 removed = self.service.store.remove_entry(image_name)  # type: ignore[union-attr]
                 if removed:
-                    yield event.plain_result(f"已删除 {image_name} 的关键词配置。")
+                    yield event.plain_result(f"已删除 {image_name} 的关键词配置")
                     return
-                yield event.plain_result(f"没有找到名为 {image_name} 的攻略配置。")
+                yield event.plain_result(f"没有找到名为 {image_name} 的攻略配置")
                 return
 
             if normalized_action in {"list", "列表"}:
@@ -412,7 +412,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
     @filter.command("删除乐土关键词", alias={"RealmRemove"})
     async def remove_strategy_keywords(self, event: AstrMessageEvent, image_name: str):
-        """删除某个攻略图的关键词配置。
+        """删除某个攻略图的关键词配置
 
         示例: /删除乐土关键词 Felis
         """
@@ -430,15 +430,15 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         try:
             removed = self.service.store.remove_entry(image_name)  # type: ignore[union-attr]
             if removed:
-                yield event.plain_result(f"已删除 {image_name} 的关键词配置。")
+                yield event.plain_result(f"已删除 {image_name} 的关键词配置")
                 return
-            yield event.plain_result(f"没有找到名为 {image_name} 的攻略配置。")
+            yield event.plain_result(f"没有找到名为 {image_name} 的攻略配置")
         except Exception as exc:
             yield self._handle_command_exception(event, "删除乐土关键词", exc)
 
     @filter.command("乐土关键词列表", alias={"RealmList"})
     async def list_strategy_keywords(self, event: AstrMessageEvent):
-        """列出全部攻略关键词。
+        """列出全部攻略关键词
 
         示例: /乐土关键词列表
         """
@@ -458,7 +458,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_keyword_message(self, event: AstrMessageEvent):
-        # 监听普通消息，并在命中关键词时返回对应攻略图。
+        # 监听普通消息，并在命中关键词时返回对应攻略图
         try:
             message = event.message_str.strip()
             if not message or message.startswith("/"):
@@ -493,10 +493,10 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             self._log_unexpected_error("处理乐土关键词消息", exc)
 
     async def _keyword_list_result(self, event: AstrMessageEvent):
-        # 根据会话类型生成关键词列表消息或导出文件。
+        # 根据会话类型生成关键词列表消息或导出文件
         blocks = self.service.store.format_entry_blocks()
         if not blocks:
-            return event.plain_result("当前没有任何乐土攻略配置。")
+            return event.plain_result("当前没有任何乐土攻略配置")
 
         if self._get_message_type(self._get_umo(event)) == "GroupMessage":
             return event.chain_result(
@@ -509,7 +509,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         )
 
     def _build_keyword_forward_nodes(self, blocks: list[str]) -> list[Comp.Node]:
-        # 将关键词列表按固定数量拆分为合并转发节点。
+        # 将关键词列表按固定数量拆分为合并转发节点
         nodes: list[Comp.Node] = []
         for index in range(0, len(blocks), LIST_FORWARD_CHUNK_SIZE):
             chunk = blocks[index : index + LIST_FORWARD_CHUNK_SIZE]
@@ -520,7 +520,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
     def _create_forward_node(
         self, existing_nodes: list[Comp.Node], blocks: list[str]
     ) -> Comp.Node:
-        # 构造单条合并转发节点内容。
+        # 构造单条合并转发节点内容
         content = "\n\n".join(blocks)
         node_index = len(existing_nodes) + 1
         return Comp.Node(
@@ -530,7 +530,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         )
 
     def _write_keyword_list_file(self, blocks: list[str]) -> Path:
-        # 将关键词列表导出为文本文件供私聊场景发送。
+        # 将关键词列表导出为文本文件供私聊场景发送
         export_dir = self.service.storage_dir / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)
         file_path = export_dir / "乐土关键词列表.txt"
@@ -538,7 +538,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return file_path
 
     def _should_reply(self, event: AstrMessageEvent) -> bool:
-        # 根据消息类型、开关和白名单决定是否执行自动回复。
+        # 根据消息类型、开关和白名单决定是否执行自动回复
         umo = self._get_umo(event)
         message_type = self._get_message_type(umo)
 
@@ -557,22 +557,22 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return True
 
     def _ensure_command_access(self, event: AstrMessageEvent, command_key: str):
-        # 在执行管理指令前检查当前用户是否具备权限。
+        # 在执行管理指令前检查当前用户是否具备权限
         if self._can_use_command(event, command_key):
             return None
 
         display_name = self._get_command_display_name(command_key)
         return event.plain_result(
-            f"指令 {display_name} 仅管理员可用。"
-            "如需开放给非管理员，请将该指令加入权限配置中的允许非管理员使用的指令列表。"
+            f"指令 {display_name} 仅管理员可用"
+            "如需开放给非管理员，请将该指令加入权限配置中的允许非管理员使用的指令列表"
         )
 
     def _ensure_service_available(self, event: AstrMessageEvent):
-        # 确认攻略服务可用，否则返回统一的失败提示。
+        # 确认攻略服务可用，否则返回统一的失败提示
         if self.service is not None:
             return None
         return event.plain_result(
-            self.service_error_message or "乐土攻略服务暂时不可用，请稍后重试。"
+            self.service_error_message or "乐土攻略服务暂时不可用，请稍后重试"
         )
 
     def _handle_command_exception(
@@ -581,21 +581,21 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         action_name: str,
         exc: Exception,
     ):
-        # 处理命令执行中的未预期异常并返回友好提示。
+        # 处理命令执行中的未预期异常并返回友好提示
         self.service_error_message = self._build_service_error_message(exc)
         self._log_unexpected_error(action_name, exc)
-        return event.plain_result(f"{action_name}失败: 发生未预期错误，请稍后重试。")
+        return event.plain_result(f"{action_name}失败: 发生未预期错误，请稍后重试")
 
     def _build_service_error_message(self, exc: Exception) -> str:
-        # 构造面向用户展示的服务异常摘要。
+        # 构造面向用户展示的服务异常摘要
         return f"乐土攻略服务暂时不可用: {exc}"
 
     def _log_unexpected_error(self, action_name: str, exc: Exception) -> None:
-        # 记录包含堆栈信息的异常日志，便于排查。
+        # 记录包含堆栈信息的异常日志，便于排查
         logger.error(f"{action_name}时发生未处理异常: {exc}\n{traceback.format_exc()}")
 
     def _can_use_command(self, event: AstrMessageEvent, command_key: str) -> bool:
-        # 综合平台权限、管理员配置和白名单判断指令可用性。
+        # 综合平台权限、管理员配置和白名单判断指令可用性
         admin_status = self._get_native_admin_status(event)
         if self._is_configured_admin(event):
             return True
@@ -606,13 +606,13 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return True
 
     def _is_configured_admin(self, event: AstrMessageEvent) -> bool:
-        # 判断当前事件是否命中手动配置的管理员标识。
+        # 判断当前事件是否命中手动配置的管理员标识
         if not self.admin_whitelist:
             return False
         return bool(self._get_admin_umo_candidates(event) & self.admin_whitelist)
 
     def _get_admin_umo_candidates(self, event: AstrMessageEvent) -> set[str]:
-        # 收集可用于管理员匹配的会话 UMO 与用户 UMO 候选值。
+        # 收集可用于管理员匹配的会话 UMO 与用户 UMO 候选值
         candidates: set[str] = set()
 
         current_umo = self._get_umo(event)
@@ -627,14 +627,14 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return candidates
 
     def _get_platform_name(self, umo: str) -> str:
-        # 从 UMO 中提取平台名称部分。
+        # 从 UMO 中提取平台名称部分
         parts = umo.split(":", 2)
         if parts:
             return parts[0].strip()
         return ""
 
     def _get_sender_ids(self, event: AstrMessageEvent) -> set[str]:
-        # 尽量从事件及其嵌套对象中提取发送者标识。
+        # 尽量从事件及其嵌套对象中提取发送者标识
         sender_ids: set[str] = set()
 
         direct_values = (
@@ -670,13 +670,13 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return sender_ids
 
     def _append_non_empty(self, values: set[str], value: object) -> None:
-        # 将非空文本值追加到集合中。
+        # 将非空文本值追加到集合中
         text = str(value or "").strip()
         if text:
             values.add(text)
 
     def _is_non_admin_command_allowed(self, command_key: str) -> bool:
-        # 判断非管理员是否可使用指定管理指令。
+        # 判断非管理员是否可使用指定管理指令
         if not self.allow_non_admin_commands:
             return False
 
@@ -690,7 +690,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         )
 
     def _get_command_display_name(self, command_key: str) -> str:
-        # 返回用于提示用户的指令显示名称。
+        # 返回用于提示用户的指令显示名称
         aliases = COMMAND_ALIASES.get(command_key)
         if not aliases:
             return command_key
@@ -700,7 +700,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return next(iter(aliases))
 
     def _get_native_admin_status(self, event: AstrMessageEvent) -> bool | None:
-        # 尝试从平台事件对象中读取原生管理员状态。
+        # 尝试从平台事件对象中读取原生管理员状态
         direct_attrs = (
             "is_admin",
             "is_owner",
@@ -741,7 +741,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return None
 
     def _coerce_admin_flag(self, value: object) -> bool | None:
-        # 将不同类型的管理员标记值规范化为布尔结果。
+        # 将不同类型的管理员标记值规范化为布尔结果
         if isinstance(value, bool):
             return value
         if isinstance(value, int):
@@ -755,7 +755,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return None
 
     def _parse_command_allowlist(self, raw_value: object) -> set[str]:
-        # 将指令白名单配置解析为归一化后的名称集合。
+        # 将指令白名单配置解析为归一化后的名称集合
         values: set[str] = set()
 
         if isinstance(raw_value, list):
@@ -780,15 +780,15 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         }
 
     def _normalize_command_name(self, value: str) -> str:
-        # 规范化指令名称，便于别名统一比较。
+        # 规范化指令名称，便于别名统一比较
         return value.strip().lower()
 
     def _get_umo(self, event: AstrMessageEvent) -> str:
-        # 读取事件的统一消息来源标识 UMO。
+        # 读取事件的统一消息来源标识 UMO
         return str(getattr(event, "unified_msg_origin", "") or "").strip()
 
     def _get_message_type(self, umo: str) -> str:
-        # 从 UMO 中提取消息类型字段。
+        # 从 UMO 中提取消息类型字段
         parts = umo.split(":", 2)
         if len(parts) >= 2:
             return parts[1].strip()
@@ -800,7 +800,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         default: object,
         legacy_key: str | None = None,
     ) -> object:
-        # 优先读取新的 object 分组配置，并兼容旧版平铺配置键名。
+        # 优先读取新的 object 分组配置，并兼容旧版平铺配置键名
         current: object = self.config
         for key in keys:
             if not isinstance(current, dict) or key not in current:
@@ -820,7 +820,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         default: bool,
         legacy_key: str | None = None,
     ) -> bool:
-        # 将布尔配置项解析为最终布尔值。
+        # 将布尔配置项解析为最终布尔值
         value = self._get_config_value(*keys, default=default, legacy_key=legacy_key)
         if isinstance(value, bool):
             return value
@@ -833,7 +833,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         return bool(value)
 
     def _parse_whitelist(self, raw_value: object) -> set[str]:
-        # 将白名单配置解析为去重后的字符串集合。
+        # 将白名单配置解析为去重后的字符串集合
         if isinstance(raw_value, list):
             return {str(token).strip() for token in raw_value if str(token).strip()}
         if isinstance(raw_value, str):
@@ -847,7 +847,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
         proxy_method: str,
         custom_proxy_url: str,
     ) -> str:
-        # 根据代理配置生成最终用于 git 操作的仓库地址。
+        # 根据代理配置生成最终用于 git 操作的仓库地址
         base_url = repository_url.strip() or DEFAULT_REPOSITORY_URL
         raw_method = proxy_method.strip()
         normalized_method = raw_method.lower() or "direct"

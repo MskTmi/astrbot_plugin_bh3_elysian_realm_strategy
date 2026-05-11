@@ -95,7 +95,6 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
   }
 }
 ```
-<img width="1179" height="1297" alt="20f93e837418ed68cef4558f1b2dd1f0" src="https://github.com/user-attachments/assets/32425540-fa1a-4fa6-a1b2-726f9563b67e" />
 
 ## 自定义攻略
 

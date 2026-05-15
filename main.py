@@ -63,7 +63,7 @@ COMMAND_ALIASES: dict[str, set[str]] = {
     PLUGIN_NAME,
     "MskTim",
     "崩坏3往世乐土攻略插件",
-    "0.2.0",
+    "0.3.0",
 )
 class Bh3ElysianRealmStrategyPlugin(Star):
     # AstrBot 乐土攻略插件入口，负责命令分发与消息回复
@@ -107,7 +107,6 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             )
             or ""
         ).strip()
-        strategies_template_path = plugin_root / INDEX_FILE_NAME
         repository_url = self._build_repository_url(
             repository_url,
             repository_proxy_method,
@@ -119,7 +118,6 @@ class Bh3ElysianRealmStrategyPlugin(Star):
                 storage_dir=storage_dir,
                 repo_directory_name=repo_directory_name,
                 repository_url=repository_url,
-                template_strategies_path=strategies_template_path,
             )
             self.service.load()
         except Exception as exc:
@@ -187,8 +185,7 @@ class Bh3ElysianRealmStrategyPlugin(Star):
 
         try:
             if service.is_git_repository():
-                service.scan_images()
-                service.sync_discovered_images()
+                service.load()
         except Exception as exc:
             self.service_error_message = self._build_service_error_message(exc)
             self._log_unexpected_error("初始化乐土攻略索引", exc)
@@ -337,6 +334,10 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             yield event.plain_result(
                 f"已更新 {image_name} 的关键词: {', '.join(entry.keywords)}"
             )
+        except KeyError:
+            yield event.plain_result(
+                f"没有找到名为 {image_name} 的攻略资源，请先同步默认索引或手动编辑本地 local-index"
+            )
         except Exception as exc:
             yield self._handle_command_exception(event, "添加乐土关键词", exc)
 
@@ -386,6 +387,8 @@ class Bh3ElysianRealmStrategyPlugin(Star):
                     f"已更新 {image_name} 的关键词: {', '.join(entry.keywords)}"
                 )
                 return
+            
+            
 
             if normalized_action in {"del", "remove", "删除"}:
                 if not image_name:
@@ -406,6 +409,10 @@ class Bh3ElysianRealmStrategyPlugin(Star):
             yield event.plain_result(
                 "支持的用法: /RealmCommand add <图片名> <关键词1,关键词2> | "
                 "/RealmCommand del <图片名> | /RealmCommand list"
+            )
+        except KeyError:
+            yield event.plain_result(
+                f"没有找到名为 {image_name} 的攻略资源，请先同步默认索引或手动编辑本地 local-index"
             )
         except Exception as exc:
             yield self._handle_command_exception(event, "RealmCommand", exc)
@@ -479,11 +486,11 @@ class Bh3ElysianRealmStrategyPlugin(Star):
                     event.stop_event()
                     if not self.service.is_git_repository():
                         yield event.plain_result(
-                            "未找到本地攻略仓库，请先执行:\n/获取乐土攻略"
+                                "已匹配到关键词，但当前缺少可用图片文件，请先执行:\n/获取乐土攻略\n或检查本地 local-index 中的图片路径"
                         )
                     else:
                         yield event.plain_result(
-                            "已匹配到关键词，但未找到对应图片文件，请先执行:\n/更新乐土攻略"
+                                "已匹配到关键词，但未找到对应图片文件，请执行:\n/更新乐土攻略\n或检查本地 local-index 中的图片路径"
                         )
                 return
 

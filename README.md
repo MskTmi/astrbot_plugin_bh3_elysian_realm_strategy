@@ -2,10 +2,6 @@
 
 > 可在群聊或私聊中根据关键词触发图片，快速获取往世乐土攻略
 
-> 移植自 Mirai 版 [Bh3-ElysianRealm-Strategy](https://github.com/MskTmi/Bh3-ElysianRealm-Strategy)，并补齐了适配 AstrBot 的仓库同步、关键词索引、权限控制和图片回复能力
-
-更新记录见 [CHANGELOG.md](CHANGELOG.md)
-
 ## 食用方法
 
 1. 安装本插件
@@ -15,25 +11,26 @@
 > `/获取乐土攻略`、`/更新乐土攻略`、`/强制获取乐土攻略` 都依赖 git  
 > 若网络较差，可在插件配置中选择预设代理，或配置自定义代理
 
-## 攻略更新
+## 攻略更新 
+> 攻略内容为不定期更新，具体以图床仓库最新提交为准  
+> 欢迎使用者为图床库 [ElysianRealm-Data](https://github.com/MskTim/ElysianRealm-Data) 提交 PR 完善内容，或通过 Issue 提交关键词建议
 
-### 图片更新
-
-- 使用 `/更新乐土攻略` 拉取最新版攻略仓库
+- 使用 `/更新乐土攻略` 拉取最新版攻略图片与关键词
 - 若本地仓库被手动修改、`.git` 目录损坏，或普通更新已经无法正常使用，可改用 `/强制获取乐土攻略` 删除本地仓库后重新浅克隆远端仓库
 
 
-### 触发词更新
+### 本地关键词管理
 
-目前执行 `/更新乐土攻略` 后，如果新增了图片或新增了角色，仍需要使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 手动补充关键词，可以在 [这里](https://github.com/MskTmi/ElysianRealm-Data/releases) 拷贝最新的攻略的触发词
-> 也可以直接编辑索引文件 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/elysian-realm-index.json` 手动维护关键词
+- 默认关键词会自动加载，无需额外配置
+- 如需追加自己的触发词，可使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 写入本地 overlay
+- 也可直接编辑 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/local-index.json`
 
 ## 效果
 
 ```text
 用户: /更新乐土攻略
 Bot: 正在更新乐土攻略并刷新索引，请稍候...
-Bot: 更新的角色: Felis_Ultimate, Human
+Bot: 更新的角色: Felis, Human
 
 用户: 猫猫乐土
 Bot: [自动发送最近更新的那一张猫猫乐土攻略图]
@@ -46,11 +43,10 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 
 ## 功能
 
-- 发送角色关键词即可返回本地攻略图
-- 支持多流派共享关键词；同一关键词命中多个变体时，自动返回最近更新的那一张图
-- `/更新乐土攻略` 会比较更新前后的 git commit，自动识别变动图片并刷新对应角色的 UTC 更新时间
-- 插件根目录的 `elysian-realm-index.json` 作为内置索引模板，运行时会写入 `data` 目录并持续更新
-- 保留 AstrBot 侧的关键词管理命令，方便为新增图片补充触发词
+- 发送角色关键词即可返回最新的攻略图
+- 支持多流派共享关键词；同一关键词命中多个变体时，自动返回索引中更新时间最新的那一张图
+- `/更新乐土攻略` 会拉取仓库并重新加载默认索引
+- 默认索引与本地 overlay 分层：仓库数据只读，本地关键词单独持久化
 - `/乐土关键词列表` 默认在群聊中使用单次合并转发发送，合并转发中的每条消息最多 10 条攻略；私聊等非群聊场景回退为 txt 文件回复
 
 ## 指令
@@ -70,28 +66,43 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 ## 注意
 
 1. 获取与更新攻略使用 GitHub 仓库，请确保网络可访问；若网络较差，可优先配置 Git 代理
-2. `/更新乐土攻略` 当前只会同步图片和更新时间，不会自动为新增图片补充关键词
+2. `/更新乐土攻略` 会重新加载默认索引；本地追加的关键词不会被覆盖
 3. 若执行更新或获取失败，不要连续重复请求；请先检查 git、网络、代理配置或直接尝试 `/强制获取乐土攻略`
 4. 管理类指令是否允许非管理员使用，取决于“允许非管理员使用管理指令”和“允许非管理员使用的指令列表”的配置
 5. 群聊和私聊自动回复是否启用，以及白名单限制，取决于“启用私聊回复”“启用群聊回复”“私聊白名单”“群聊白名单”的配置
 
 ## 数据文件
 
-- 插件根目录的 `elysian-realm-index.json` 为随插件分发的默认索引模板
 - 本地仓库默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data`
-- 运行时索引文件默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/elysian-realm-index.json`
+- 默认索引文件默认读取自 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data/dist/elysian-realm-index.json`
+- 本地 overlay 文件默认存放在 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/local-index.json`
 
-运行时索引结构示例：
+默认索引结构示例：
 
 ```json
 {
-  "Felis_Attack": {
-    "keywords": ["猫猫乐土", "猫猫普攻流"],
-    "last_updated": "2024-12-25T10:00:00+00:00"
+  "schema_version": 1,
+  "resources": {
+    "Felis_Attack": {
+      "image": "data/Felis_Attack.jpg",
+      "last_updated": "2024-12-25T10:00:00+00:00"
+    }
   },
-  "Felis_Ultimate": {
-    "keywords": ["猫猫乐土", "猫猫大招流"],
-    "last_updated": "2024-12-31T10:00:00+00:00"
+  "keywords": {
+    "猫猫乐土": ["Felis", "Felis_Attack"],
+    "猫猫普攻流": ["Felis_Attack"]
+  }
+}
+```
+
+本地 overlay 结构示例：
+
+```json
+{
+  "schema_version": 1,
+  "resources": {},
+  "keywords": {
+    "我的猫猫乐土": ["Felis_Attack"]
   }
 }
 ```
@@ -101,8 +112,8 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 
 ### 添加本地攻略图
 
-1. 将图片放入 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data`
-2. 使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 为图片补充触发词
+1. 将图片放入 `data/plugin_data/astrbot_plugin_bh3_elysian_realm_strategy/ElysianRealm-Data/data`
+2. 使用 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 为已有资源补充本地触发词
 3. 用户在聊天中发送对应关键词后，即可触发该图片
 
 ### 自定义攻略仓库
@@ -141,14 +152,13 @@ Bot: 已更新 Felis 的关键词: 猫猫乐土, 菲利丝乐土
 
 
 1. 执行 `/获取乐土攻略` 失败时，可先检查网络和代理配置；若本地仓库状态异常，可直接尝试 `/强制获取乐土攻略`
-2. 当前版本更新图片后不会自动补全新增图片的关键词，需要手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>`
+2. 如果默认索引中已经包含关键词，更新后会自动生效；只有你自己追加的关键词才需要写入本地 overlay
 3. 如果私聊或群聊发送关键词没有回复，请检查“启用私聊回复”“启用群聊回复”以及对应白名单配置
 4. 如果你修改了仓库地址或代理配置，但更新仍然异常，可以重新执行 `/强制获取乐土攻略`，强制删除旧仓库并重新浅克隆
 
-## 未来规划
+## 更新记录
 
-- 在图片库中补充和维护索引表，减少手动维护关键词的成本
-- 结合图片库索引表，在后续版本中实现更新仓库后自动同步关键词，尽量减少手动执行 `/添加乐土关键词 <图片名> <关键词1,关键词2>` 的场景
+更新记录见 [CHANGELOG.md](CHANGELOG.md)
 
 ## 开发参考
 
